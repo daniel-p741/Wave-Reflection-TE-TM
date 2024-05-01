@@ -19,9 +19,11 @@ window.onload = function () {
     scene.add(light);
 
     let sheetMaterial = new THREE.MeshStandardMaterial({
-        //silver
-        color: 0x888888,
-        metalness: .60,
+
+        color: 0x0bb6a8,
+        metalness: .30,
+        transparent: true,
+        opacity: 0.4,
         roughness: 0,
         side: THREE.DoubleSide
     });
