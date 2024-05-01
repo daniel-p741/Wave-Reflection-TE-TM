@@ -107,8 +107,11 @@ window.onload = function () {
         // Calculate the displacement along the y-axis using a sine function
         let y = Math.sin(t * 2 * Math.PI * frequency) * amplitude;
 
-        // Create the point with the same x and z coordinates as the line, and y offset by the sine wave
-        let point = new THREE.Vector3(interpolatedPosition.x, interpolatedPosition.y + y, interpolatedPosition.z);
+        // Adjust y to align with tm_bottom
+        let adjustedY = y + (tm_bottom.y - initial_position.y);
+
+        // Create the point with the same x and z coordinates as the line, and adjusted y-coordinate
+        let point = new THREE.Vector3(interpolatedPosition.x, adjustedY, interpolatedPosition.z);
 
         // Add the point to the array
         tm_points.push(point);
@@ -119,6 +122,8 @@ window.onload = function () {
 
     // Create the line
     let TM_Field = new THREE.Line(TM_geometry, new THREE.LineBasicMaterial({ color: 0x0bb6a8 }));
+
+    TM_Field.position.copy(tm_bottom); // Set the line's position to the bottom point in world space
 
 
     //let TM_Field = new THREE.ArrowHelper(new THREE.Vector3(-1, 1, 0), initial_position, 5, 0xffff00);
