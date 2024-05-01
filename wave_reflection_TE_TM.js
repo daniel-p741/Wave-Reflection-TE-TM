@@ -158,6 +158,7 @@ window.onload = function () {
     let TE_initialRotation = new THREE.Euler(0, Math.PI / -1.8, 0);
 
 
+
     slider.oninput = function () {
         let angle = parseFloat(this.value); // Get angle in degrees from the slider
         angleValue.textContent = angle + '°'; // Update the displayed angle value
@@ -182,14 +183,19 @@ window.onload = function () {
         // Reset rotation
         TM_Field.rotation.set(0, 0, 0);
 
-        //TE_Field.rotation.set(0, 0, 0);
-        TE_Field.setRotationFromEuler(TE_initialRotation);
+
 
         // Rotate around the local Z-axis, which is now correctly set at the bottom
         TM_Field.rotateOnAxis(axis, angleInRadians);
 
-        //TE_Field.rotateOnAxis(new THREE.Vector3(0, 0, -1), angleInRadians);
-        TE_Field.rotateOnAxis(axis, angleInRadians);
+        let axisTE = new THREE.Vector3(0, 1, 0); // Adjust this axis if needed
+
+        // Reset TE_Field to its initial rotation
+        TE_Field.setRotationFromEuler(TE_initialRotation);
+
+        // Rotate TE_Field
+        // Since it needs to go downward counterclockwise, the sign might need to be adjusted (-angleInRadians)
+        TE_Field.rotateOnAxis(axisTE, -angleInRadians);
 
 
 
