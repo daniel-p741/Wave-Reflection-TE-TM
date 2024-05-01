@@ -66,21 +66,32 @@ window.onload = function () {
 
 
     let initial_position = new THREE.Vector3(points[1].x, points[1].y, points[1].z);
-    let direction = new THREE.Vector3(-1, 1, 0); // Ensure it's a unit vector
+    let direction = new THREE.Vector3(-1, 1, 0);
 
     // Define the length of the arrow
     let length = 5;
 
     // Create the initial light ArrowHelper
-    let initial_light = new THREE.ArrowHelper(direction, initial_position, length, 0xffff00);
+    let initial_light = new THREE.ArrowHelper(direction.clone(), initial_position, length, 0xffff00);
 
     // Using THREE.Vector3().addVectors() to find the tip of the arrow directly
-    let initial_light_tip = new THREE.Vector3().addVectors(initial_position, direction.multiplyScalar(length));
+    //let initial_light_tip = new THREE.Vector3().addVectors(initial_position, direction.multiplyScalar(length));
+    let initial_light_tip = new THREE.Vector3().addVectors(initial_position, direction.clone().multiplyScalar(length));
+    //let line_end_position = new THREE.Vector3().addVectors(initial_position, direction.clone().multiplyScalar(length));
+    let line_length = length * .8;  // Adjust the 0.8 based on your visual observation
+    let line_end_position = new THREE.Vector3().addVectors(initial_position, direction.clone().multiplyScalar(line_length));
 
     // Use this tip to define your line or other geometry
-    let tm_points = [new THREE.Vector3(0, initial_light_tip.y, 0), new THREE.Vector3(0, sheet.position.y, 0)];
+    //let tm_points = [new THREE.Vector3(0, initial_light_tip.y, 0), new THREE.Vector3(0, sheet.position.y, 0)];
+    //let TM_geometry = new THREE.BufferGeometry().setFromPoints(tm_points);
+    //let TM_Field = new THREE.Line(TM_geometry, new THREE.LineBasicMaterial({ color: 0xffff00 }));
+
+    let tm_points = [
+        new THREE.Vector3(0, line_end_position.y, 0), // Start from the arrow tip
+        new THREE.Vector3(0, sheet.position.y, 0) // End at some point (adjust as needed)
+    ];
     let TM_geometry = new THREE.BufferGeometry().setFromPoints(tm_points);
-    let TM_Field = new THREE.Line(TM_geometry, new THREE.LineBasicMaterial({ color: 0xffff00 }));
+    let TM_Field = new THREE.Line(TM_geometry, new THREE.LineBasicMaterial({ color: 0x0bb6a8 }));
 
     //let TM_Field = new THREE.ArrowHelper(new THREE.Vector3(-1, 1, 0), initial_position, 5, 0xffff00);
     initial_light.cone.material.transparent = true;
