@@ -104,14 +104,14 @@ window.onload = function () {
         // Interpolate the position along the line
         let interpolatedPosition = new THREE.Vector3().copy(initial_position).lerp(line_end_position, t);
 
-        // Calculate the displacement along the y-axis using a sine function
-        let y = Math.sin(t * 2 * Math.PI * frequency) * amplitude;
+        // Calculate the displacement along the x-axis using a sine function
+        let x = Math.sin(t * 2 * Math.PI * frequency) * amplitude;
 
-        // Adjust y to align with tm_bottom
-        let adjustedY = y + (tm_bottom.y - initial_position.y);
+        // Adjust x to align with tm_bottom
+        let adjustedX = x + (tm_bottom.x - initial_position.x);
 
-        // Create the point with the same x and z coordinates as the line, and adjusted y-coordinate
-        let point = new THREE.Vector3(interpolatedPosition.x, adjustedY, interpolatedPosition.z);
+        // Create the point with the adjusted x-coordinate and same y and z coordinates as the line
+        let point = new THREE.Vector3(adjustedX, interpolatedPosition.y, interpolatedPosition.z);
 
         // Add the point to the array
         tm_points.push(point);
