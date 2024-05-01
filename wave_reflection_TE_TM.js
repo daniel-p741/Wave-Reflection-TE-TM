@@ -90,7 +90,7 @@ window.onload = function () {
     let tm_top = new THREE.Vector3(0, line_end_position.y - sheet.position.y, 0);  // Offset by the bottom point
 
     let frequency = 1; // Adjust the frequency of the sine wave
-    let amplitude = 2; // Adjust the amplitude of the sine wave
+    let amplitude = 1.5; // Adjust the amplitude of the sine wave
 
     // Define the number of points to sample along the line
     let numPoints = 100; // Adjust as needed
@@ -109,9 +109,10 @@ window.onload = function () {
 
         // Adjust x to align with tm_bottom
         let adjustedX = x + (tm_bottom.x - initial_position.x);
+        let y = Math.sin(2 * Math.PI * frequency) * amplitude + 2;
 
         // Create the point with the adjusted x-coordinate and same y and z coordinates as the line
-        let point = new THREE.Vector3(adjustedX, interpolatedPosition.y, interpolatedPosition.z);
+        let point = new THREE.Vector3(adjustedX, interpolatedPosition.y + y, interpolatedPosition.z);
 
         // Add the point to the array
         tm_points.push(point);
