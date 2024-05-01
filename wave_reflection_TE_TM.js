@@ -96,6 +96,7 @@ window.onload = function () {
     let numPoints = 100; // Adjust as needed
 
     let tm_points = [];
+    let te_points = [];
 
     for (let i = 0; i < numPoints; i++) {
         // Calculate the parameter along the line
@@ -113,18 +114,28 @@ window.onload = function () {
 
         // Create the point with the adjusted x-coordinate and same y and z coordinates as the line
         let point = new THREE.Vector3(adjustedX, interpolatedPosition.y + y, interpolatedPosition.z);
+        let te_point = new THREE.Vector3(adjustedX, interpolatedPosition.y + y, interpolatedPosition.z);
+
 
         // Add the point to the array
         tm_points.push(point);
+        te_points.push(te_point);
     }
 
-    // Create the geometry from the points
     let TM_geometry = new THREE.BufferGeometry().setFromPoints(tm_points);
+
+    let TE_geometry = new THREE.BufferGeometry().setFromPoints(te_points);
 
     // Create the line
     let TM_Field = new THREE.Line(TM_geometry, new THREE.LineBasicMaterial({ color: 0x0bb6a8 }));
 
+    let TE_Field = new THREE.Line(TE_geometry, new THREE.LineBasicMaterial({ color: 0x0bb6a8 }));
+
+    let TE_rotation = new THREE.Euler(0, Math.PI / -1.8, 0);
+    TE_Field.setRotationFromEuler(TE_rotation);
+
     TM_Field.position.copy(tm_bottom); // Set the line's position to the bottom point in world space
+    TE_Field.position.copy(tm_bottom);
 
 
     //let TM_Field = new THREE.ArrowHelper(new THREE.Vector3(-1, 1, 0), initial_position, 5, 0xffff00);
@@ -135,7 +146,7 @@ window.onload = function () {
 
     reflected_position = new THREE.Vector3(points[1].x, points[1].y, points[1].z);
     let reflected_light = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 0), reflected_position, 5, 0xffff00);
-    scene.add(initial_light, TM_Field, reflected_light);
+    scene.add(initial_light, TM_Field, TE_Field, reflected_light);
 
     let slider = document.getElementById("incidentAngle");
     let angleValue = document.getElementById("angleValue");
@@ -169,8 +180,13 @@ window.onload = function () {
         // Reset rotation
         TM_Field.rotation.set(0, 0, 0);
 
+        TE_Field.rotation.set(0, 0, 0);
+
         // Rotate around the local Z-axis, which is now correctly set at the bottom
         TM_Field.rotateOnAxis(axis, angleInRadians);
+
+        TE_Field.rotateOnAxis(new THREE.Vector3(0, 0, -1), angleInRadians);
+
 
 
 
