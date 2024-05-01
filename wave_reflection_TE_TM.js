@@ -89,14 +89,37 @@ window.onload = function () {
     let tm_bottom = new THREE.Vector3(0, sheet.position.y, 0);
     let tm_top = new THREE.Vector3(0, line_end_position.y - sheet.position.y, 0);  // Offset by the bottom point
 
-    let tm_points = [
-        new THREE.Vector3(0, 0, 0), // Now at origin, which is tm_bottom in world space
-        tm_top
-    ];
+    let frequency = 1; // Adjust the frequency of the sine wave
+    let amplitude = 2; // Adjust the amplitude of the sine wave
 
+    // Define the number of points to sample along the line
+    let numPoints = 100; // Adjust as needed
+
+    let tm_points = [];
+
+    for (let i = 0; i < numPoints; i++) {
+        // Calculate the parameter along the line
+        let t = i / (numPoints - 1);
+
+        // Interpolate the position along the line
+        let interpolatedPosition = new THREE.Vector3().copy(initial_position).lerp(line_end_position, t);
+
+        // Calculate the displacement along the y-axis using a sine function
+        let y = Math.sin(t * 2 * Math.PI * frequency) * amplitude;
+
+        // Create the point with the same x and z coordinates as the line, and y offset by the sine wave
+        let point = new THREE.Vector3(interpolatedPosition.x, interpolatedPosition.y + y, interpolatedPosition.z);
+
+        // Add the point to the array
+        tm_points.push(point);
+    }
+
+    // Create the geometry from the points
     let TM_geometry = new THREE.BufferGeometry().setFromPoints(tm_points);
+
+    // Create the line
     let TM_Field = new THREE.Line(TM_geometry, new THREE.LineBasicMaterial({ color: 0x0bb6a8 }));
-    TM_Field.position.copy(tm_bottom); // Set the line's position to the bottom point in world space
+
 
     //let TM_Field = new THREE.ArrowHelper(new THREE.Vector3(-1, 1, 0), initial_position, 5, 0xffff00);
     initial_light.cone.material.transparent = true;
