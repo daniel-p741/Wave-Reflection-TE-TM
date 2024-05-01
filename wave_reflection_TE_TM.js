@@ -72,10 +72,12 @@ window.onload = function () {
     let TM_Field = new THREE.ArrowHelper(new THREE.Vector3(-1, 1, 0), initial_position, 5, 0xffff00);
     initial_light.cone.material.transparent = true;
     initial_light.cone.material.opacity = 0;
+    TM_Field.cone.material.transparent = true;
+    TM_Field.cone.material.opacity = 0;
 
     reflected_position = new THREE.Vector3(points[1].x, points[1].y, points[1].z);
     let reflected_light = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 0), reflected_position, 5, 0xffff00);
-    scene.add(initial_light, reflected_light);
+    scene.add(initial_light, TM_Field, reflected_light);
 
     let slider = document.getElementById("incidentAngle");
     let angleValue = document.getElementById("angleValue");
