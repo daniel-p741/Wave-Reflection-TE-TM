@@ -86,12 +86,17 @@ window.onload = function () {
     //let TM_geometry = new THREE.BufferGeometry().setFromPoints(tm_points);
     //let TM_Field = new THREE.Line(TM_geometry, new THREE.LineBasicMaterial({ color: 0xffff00 }));
 
+    let tm_bottom = new THREE.Vector3(0, sheet.position.y, 0);
+    let tm_top = new THREE.Vector3(0, line_end_position.y - sheet.position.y, 0);  // Offset by the bottom point
+
     let tm_points = [
-        new THREE.Vector3(0, line_end_position.y, 0), // Start from the arrow tip
-        new THREE.Vector3(0, sheet.position.y, 0) // End at some point (adjust as needed)
+        new THREE.Vector3(0, 0, 0), // Now at origin, which is tm_bottom in world space
+        tm_top
     ];
+
     let TM_geometry = new THREE.BufferGeometry().setFromPoints(tm_points);
     let TM_Field = new THREE.Line(TM_geometry, new THREE.LineBasicMaterial({ color: 0x0bb6a8 }));
+    TM_Field.position.copy(tm_bottom); // Set the line's position to the bottom point in world space
 
     //let TM_Field = new THREE.ArrowHelper(new THREE.Vector3(-1, 1, 0), initial_position, 5, 0xffff00);
     initial_light.cone.material.transparent = true;
@@ -105,6 +110,9 @@ window.onload = function () {
 
     let slider = document.getElementById("incidentAngle");
     let angleValue = document.getElementById("angleValue");
+
+    //let tm_bottom = new THREE.Vector3(0, sheet.position.y, 0);
+    //let tm_top = new THREE.Vector3(0, line_end_position.y, 0);
 
     let clock = new THREE.Clock();
 
@@ -120,11 +128,23 @@ window.onload = function () {
 
         // Reset the rotation of the initial light
         initial_light.rotation.set(0, 0, 0);
-        TM_Field.rotation.set(0, 0, 0);
+        //TM_Field.rotation.set(0, 0, 0);
 
         // Rotate the initial light counterclockwise around the z-axis
         initial_light.rotateOnAxis(axis, angleInRadians);
+        //TM_Field.rotateOnAxis(axis, angleInRadians);
+
+        //TM_Field.rotation.set(0, 0, 0); // Reset rotation to align rotation effect properly
+        //TM_Field.rotateOnAxis(new THREE.Vector3(0, 0, 1), angleInRadians); // Rotate around Z-axis
+
+        // Reset rotation
+        TM_Field.rotation.set(0, 0, 0);
+
+        // Rotate around the local Z-axis, which is now correctly set at the bottom
         TM_Field.rotateOnAxis(axis, angleInRadians);
+
+
+
 
         // Reset the rotation of the reflected light
         reflected_light.rotation.set(0, 0, 0);
