@@ -65,15 +65,28 @@ window.onload = function () {
     scene.add(line);
 
 
-    initial_position = new THREE.Vector3(points[1].x, points[1].y, points[1].z)
+    let initial_position = new THREE.Vector3(points[1].x, points[1].y, points[1].z);
+    let direction = new THREE.Vector3(-1, 1, 0); // Ensure it's a unit vector
 
-    //let initial_light = new THREE.ArrowHelper(new THREE.Vector3(1, -1, 0), initial_position, 5, 0xffff00);
-    let initial_light = new THREE.ArrowHelper(new THREE.Vector3(-1, 1, 0), initial_position, 5, 0xffff00);
-    let TM_Field = new THREE.ArrowHelper(new THREE.Vector3(-1, 1, 0), initial_position, 5, 0xffff00);
+    // Define the length of the arrow
+    let length = 5;
+
+    // Create the initial light ArrowHelper
+    let initial_light = new THREE.ArrowHelper(direction, initial_position, length, 0xffff00);
+
+    // Using THREE.Vector3().addVectors() to find the tip of the arrow directly
+    let initial_light_tip = new THREE.Vector3().addVectors(initial_position, direction.multiplyScalar(length));
+
+    // Use this tip to define your line or other geometry
+    let tm_points = [new THREE.Vector3(0, initial_light_tip.y, 0), new THREE.Vector3(0, sheet.position.y, 0)];
+    let TM_geometry = new THREE.BufferGeometry().setFromPoints(tm_points);
+    let TM_Field = new THREE.Line(TM_geometry, new THREE.LineBasicMaterial({ color: 0xffff00 }));
+
+    //let TM_Field = new THREE.ArrowHelper(new THREE.Vector3(-1, 1, 0), initial_position, 5, 0xffff00);
     initial_light.cone.material.transparent = true;
     initial_light.cone.material.opacity = 0;
-    TM_Field.cone.material.transparent = true;
-    TM_Field.cone.material.opacity = 0;
+    //TM_Field.cone.material.transparent = true;
+    //TM_Field.cone.material.opacity = 0;
 
     reflected_position = new THREE.Vector3(points[1].x, points[1].y, points[1].z);
     let reflected_light = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 0), reflected_position, 5, 0xffff00);
