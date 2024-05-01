@@ -69,6 +69,7 @@ window.onload = function () {
 
     //let initial_light = new THREE.ArrowHelper(new THREE.Vector3(1, -1, 0), initial_position, 5, 0xffff00);
     let initial_light = new THREE.ArrowHelper(new THREE.Vector3(-1, 1, 0), initial_position, 5, 0xffff00);
+    let TM_Field = new THREE.ArrowHelper(new THREE.Vector3(-1, 1, 0), initial_position, 5, 0xffff00);
     initial_light.cone.material.transparent = true;
     initial_light.cone.material.opacity = 0;
 
@@ -93,9 +94,11 @@ window.onload = function () {
 
         // Reset the rotation of the initial light
         initial_light.rotation.set(0, 0, 0);
+        TM_Field.rotation.set(0, 0, 0);
 
         // Rotate the initial light counterclockwise around the z-axis
         initial_light.rotateOnAxis(axis, angleInRadians);
+        TM_Field.rotateOnAxis(axis, angleInRadians);
 
         // Reset the rotation of the reflected light
         reflected_light.rotation.set(0, 0, 0);
