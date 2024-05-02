@@ -127,9 +127,9 @@ window.onload = function () {
     let TE_geometry = new THREE.BufferGeometry().setFromPoints(te_points);
 
     // Create the line
-    let TM_Field = new THREE.Line(TM_geometry, new THREE.LineBasicMaterial({ color: 0x0bb6a8 }));
+    let TM_Field = new THREE.Line(TM_geometry, new THREE.LineBasicMaterial({ color: 0x00008B }));
 
-    let TE_Field = new THREE.Line(TE_geometry, new THREE.LineBasicMaterial({ color: 0x0bb6a8 }));
+    let TE_Field = new THREE.Line(TE_geometry, new THREE.LineBasicMaterial({ color: 0xFF0000 }));
 
     let TE_rotation = new THREE.Euler(0, Math.PI / -1.8, 0);
     TE_Field.setRotationFromEuler(TE_rotation);
