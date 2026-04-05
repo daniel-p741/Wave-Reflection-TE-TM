@@ -197,7 +197,7 @@ body, html {
     left: 50%;
     transform: translateX(-50%);
     bottom: 24px;
-    width: 200px;
+    width: 250px;
 }
 
 .camera-panel:hover {

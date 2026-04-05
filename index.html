@@ -82,10 +82,24 @@
     </div>
 
     <div class="ui-panel camera-panel">
-        <h1 class="title">Camera View</h1>
+        <h1 class="title">View Options</h1>
+        <div class="material-options" style="margin-bottom: 12px; border-bottom: 1px solid var(--panel-border); padding-bottom: 12px;">
+            <label class="radio-label">
+                <input type="radio" name="waveView" value="all" checked>
+                <span>Draw TE & TM</span>
+            </label>
+            <label class="radio-label">
+                <input type="radio" name="waveView" value="te">
+                <span class="te-color">TE Only (Electric)</span>
+            </label>
+            <label class="radio-label">
+                <input type="radio" name="waveView" value="tm">
+                <span class="tm-color">TM Only (Magnetic)</span>
+            </label>
+        </div>
         <label class="radio-label">
             <input type="checkbox" id="autoRotateToggle">
-            <span>Auto Rotate</span>
+            <span>Auto Rotate Camera</span>
         </label>
     </div>
 

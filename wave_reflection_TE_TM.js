@@ -83,7 +83,7 @@ window.onload = function () {
     let r_TE = 0, r_TM = 0, t_TE = 0, t_TM = 0;
     let theta_t = 0;
 
-    // Arrays to hold vertex position arrays
+    // Arrays to hold envelope line arrays
     const incTePos = new Float32Array(numPoints * 3);
     const incTmPos = new Float32Array(numPoints * 3);
     const refTePos = new Float32Array(numPoints * 3);
@@ -91,10 +91,37 @@ window.onload = function () {
     const transTePos = new Float32Array(numPoints * 3);
     const transTmPos = new Float32Array(numPoints * 3);
 
+    // Arrays to hold ribbon meshes
+    const ribbonPointCount = numPoints;
+    const incTeRibbonPos = new Float32Array(ribbonPointCount * 2 * 3);
+    const incTmRibbonPos = new Float32Array(ribbonPointCount * 2 * 3);
+    const refTeRibbonPos = new Float32Array(ribbonPointCount * 2 * 3);
+    const refTmRibbonPos = new Float32Array(ribbonPointCount * 2 * 3);
+    const transTeRibbonPos = new Float32Array(ribbonPointCount * 2 * 3);
+    const transTmRibbonPos = new Float32Array(ribbonPointCount * 2 * 3);
+
+    const ribbonIndices = new Uint16Array((ribbonPointCount - 1) * 6);
+    let r_idx = 0;
+    for(let i=0; i < ribbonPointCount-1; i++) {
+        const v0 = i*2;
+        const v1 = i*2 + 1;
+        const v2 = (i+1)*2;
+        const v3 = (i+1)*2 + 1;
+        ribbonIndices[r_idx++] = v0; ribbonIndices[r_idx++] = v1; ribbonIndices[r_idx++] = v2;
+        ribbonIndices[r_idx++] = v1; ribbonIndices[r_idx++] = v3; ribbonIndices[r_idx++] = v2;
+    }
+
     // Geometries
     const makeGeo = (pos) => {
         const geo = new THREE.BufferGeometry();
         geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+        return geo;
+    };
+
+    const makeRibbonGeo = (pos) => {
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+        geo.setIndex(new THREE.BufferAttribute(ribbonIndices, 1));
         return geo;
     };
 
@@ -104,6 +131,13 @@ window.onload = function () {
     const refTmGeo = makeGeo(refTmPos);
     const transTeGeo = makeGeo(transTePos);
     const transTmGeo = makeGeo(transTmPos);
+    
+    const incTeRibbonGeo = makeRibbonGeo(incTeRibbonPos);
+    const incTmRibbonGeo = makeRibbonGeo(incTmRibbonPos);
+    const refTeRibbonGeo = makeRibbonGeo(refTeRibbonPos);
+    const refTmRibbonGeo = makeRibbonGeo(refTmRibbonPos);
+    const transTeRibbonGeo = makeRibbonGeo(transTeRibbonPos);
+    const transTmRibbonGeo = makeRibbonGeo(transTmRibbonPos);
 
     // Meshes
     const incTeLine = new THREE.Line(incTeGeo, teMaterial);
@@ -113,19 +147,32 @@ window.onload = function () {
     const transTeLine = new THREE.Line(transTeGeo, teMaterial);
     const transTmLine = new THREE.Line(transTmGeo, tmMaterial);
 
-    scene.add(incTeLine, incTmLine, refTeLine, refTmLine, transTeLine, transTmLine);
+    const teRibbonMat = new THREE.MeshBasicMaterial({ color: 0xf87171, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false });
+    const tmRibbonMat = new THREE.MeshBasicMaterial({ color: 0x818cf8, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false });
 
-    // Support ray lines (dashed)
+    const incTeRibbon = new THREE.Mesh(incTeRibbonGeo, teRibbonMat);
+    const incTmRibbon = new THREE.Mesh(incTmRibbonGeo, tmRibbonMat);
+    const refTeRibbon = new THREE.Mesh(refTeRibbonGeo, teRibbonMat);
+    const refTmRibbon = new THREE.Mesh(refTmRibbonGeo, tmRibbonMat);
+    const transTeRibbon = new THREE.Mesh(transTeRibbonGeo, teRibbonMat);
+    const transTmRibbon = new THREE.Mesh(transTmRibbonGeo, tmRibbonMat);
+
+    scene.add(incTeLine, incTmLine, refTeLine, refTmLine, transTeLine, transTmLine);
+    scene.add(incTeRibbon, incTmRibbon, refTeRibbon, refTmRibbon, transTeRibbon, transTmRibbon);
+
+    // Support ray lines (solid baseline)
+    const solidRayMaterial = new THREE.LineBasicMaterial({ color: 0xffffff, opacity: 0.6, transparent: true });
     const incRayGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
     const refRayGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
     const transRayGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
-    const incRayLine = new THREE.Line(incRayGeo, rayMaterial);
-    const refRayLine = new THREE.Line(refRayGeo, rayMaterial);
-    const transRayLine = new THREE.Line(transRayGeo, rayMaterial);
-    incRayLine.computeLineDistances();
-    refRayLine.computeLineDistances();
-    transRayLine.computeLineDistances();
+    const incRayLine = new THREE.Line(incRayGeo, solidRayMaterial);
+    const refRayLine = new THREE.Line(refRayGeo, solidRayMaterial);
+    const transRayLine = new THREE.Line(transRayGeo, solidRayMaterial);
     scene.add(incRayLine, refRayLine, transRayLine);
+
+    // Group elements for toggling
+    const teObjects = [incTeLine, refTeLine, transTeLine, incTeRibbon, refTeRibbon, transTeRibbon];
+    const tmObjects = [incTmLine, refTmLine, transTmLine, incTmRibbon, refTmRibbon, transTmRibbon];
 
     const normalGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, -L, 0), new THREE.Vector3(0, L, 0)]);
     const normalLine = new THREE.Line(normalGeo, new THREE.LineDashedMaterial({ color: 0xffffff, dashSize: 0.4, gapSize: 0.2, opacity: 0.5, transparent: true }));
@@ -264,6 +311,12 @@ window.onload = function () {
             incTePos[i*3] = ite.x; incTePos[i*3+1] = ite.y; incTePos[i*3+2] = ite.z;
             incTmPos[i*3] = itm.x; incTmPos[i*3+1] = itm.y; incTmPos[i*3+2] = itm.z;
 
+            incTeRibbonPos[i*6] = incBase.x; incTeRibbonPos[i*6+1] = incBase.y; incTeRibbonPos[i*6+2] = incBase.z;
+            incTeRibbonPos[i*6+3] = ite.x; incTeRibbonPos[i*6+4] = ite.y; incTeRibbonPos[i*6+5] = ite.z;
+            
+            incTmRibbonPos[i*6] = incBase.x; incTmRibbonPos[i*6+1] = incBase.y; incTmRibbonPos[i*6+2] = incBase.z;
+            incTmRibbonPos[i*6+3] = itm.x; incTmRibbonPos[i*6+4] = itm.y; incTmRibbonPos[i*6+5] = itm.z;
+
             // Reflected/Transmitted Phase (starts at origin at 0 phase)
             const phaseOut = k * s - w * time;
             const outSine = Math.sin(phaseOut);
@@ -275,12 +328,24 @@ window.onload = function () {
             refTePos[i*3] = rte.x; refTePos[i*3+1] = rte.y; refTePos[i*3+2] = rte.z;
             refTmPos[i*3] = rtm.x; refTmPos[i*3+1] = rtm.y; refTmPos[i*3+2] = rtm.z;
 
+            refTeRibbonPos[i*6] = refBase.x; refTeRibbonPos[i*6+1] = refBase.y; refTeRibbonPos[i*6+2] = refBase.z;
+            refTeRibbonPos[i*6+3] = rte.x; refTeRibbonPos[i*6+4] = rte.y; refTeRibbonPos[i*6+5] = rte.z;
+
+            refTmRibbonPos[i*6] = refBase.x; refTmRibbonPos[i*6+1] = refBase.y; refTmRibbonPos[i*6+2] = refBase.z;
+            refTmRibbonPos[i*6+3] = rtm.x; refTmRibbonPos[i*6+4] = rtm.y; refTmRibbonPos[i*6+5] = rtm.z;
+
             const transBase = dirTrans.clone().multiplyScalar(s);
             const tte = transBase.clone().add(tePerp.clone().multiplyScalar(t_TE * outSine));
             const ttm = transBase.clone().add(tmPerpTrans.clone().multiplyScalar(t_TM * outSine));
             
             transTePos[i*3] = tte.x; transTePos[i*3+1] = tte.y; transTePos[i*3+2] = tte.z;
             transTmPos[i*3] = ttm.x; transTmPos[i*3+1] = ttm.y; transTmPos[i*3+2] = ttm.z;
+
+            transTeRibbonPos[i*6] = transBase.x; transTeRibbonPos[i*6+1] = transBase.y; transTeRibbonPos[i*6+2] = transBase.z;
+            transTeRibbonPos[i*6+3] = tte.x; transTeRibbonPos[i*6+4] = tte.y; transTeRibbonPos[i*6+5] = tte.z;
+
+            transTmRibbonPos[i*6] = transBase.x; transTmRibbonPos[i*6+1] = transBase.y; transTmRibbonPos[i*6+2] = transBase.z;
+            transTmRibbonPos[i*6+3] = ttm.x; transTmRibbonPos[i*6+4] = ttm.y; transTmRibbonPos[i*6+5] = ttm.z;
         }
 
         incTeGeo.attributes.position.needsUpdate = true;
@@ -289,6 +354,13 @@ window.onload = function () {
         refTmGeo.attributes.position.needsUpdate = true;
         transTeGeo.attributes.position.needsUpdate = true;
         transTmGeo.attributes.position.needsUpdate = true;
+
+        incTeRibbonGeo.attributes.position.needsUpdate = true;
+        incTmRibbonGeo.attributes.position.needsUpdate = true;
+        refTeRibbonGeo.attributes.position.needsUpdate = true;
+        refTmRibbonGeo.attributes.position.needsUpdate = true;
+        transTeRibbonGeo.attributes.position.needsUpdate = true;
+        transTmRibbonGeo.attributes.position.needsUpdate = true;
     }
 
     let isWater = false;
@@ -332,6 +404,23 @@ window.onload = function () {
             controls.autoRotate = e.target.checked;
         });
     }
+
+    const waveViewRadios = document.querySelectorAll('input[name="waveView"]');
+    waveViewRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            const val = e.target.value;
+            if (val === 'all') {
+                teObjects.forEach(o => o.visible = true);
+                tmObjects.forEach(o => o.visible = true);
+            } else if (val === 'te') {
+                teObjects.forEach(o => o.visible = true);
+                tmObjects.forEach(o => o.visible = false);
+            } else if (val === 'tm') {
+                teObjects.forEach(o => o.visible = false);
+                tmObjects.forEach(o => o.visible = true);
+            }
+        });
+    });
 
     // Draggable Panels
     const panels = document.querySelectorAll('.ui-panel');
