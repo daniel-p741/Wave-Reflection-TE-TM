@@ -4,8 +4,8 @@ window.onload = function () {
     
     // Camera
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 2, 18);
-    camera.lookAt(new THREE.Vector3(0, -2, 0));
+    // Bring camera closer and angle it to see the water ripples clearly
+    camera.position.set(-8, 5, 16);
 
     // Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -13,6 +13,13 @@ window.onload = function () {
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setClearColor(0x0f172a, 1);
     container.appendChild(renderer.domElement);
+
+    // Orbit Controls
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.target.set(0, -2, 0);
+    controls.autoRotateSpeed = 1.5;
 
     // Lights
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -26,21 +33,33 @@ window.onload = function () {
     const tmMaterial = new THREE.LineBasicMaterial({ color: 0x818cf8, linewidth: 2 });
     const rayMaterial = new THREE.LineDashedMaterial({ color: 0xffffff, dashSize: 0.2, gapSize: 0.1, opacity: 0.3, transparent: true });
 
-    // Glass interface (y = 0)
-    const glassGeometry = new THREE.BoxGeometry(30, 10, 10);
-    const glassMaterial = new THREE.MeshPhysicalMaterial({
+    // Interface Material (y = 0)
+    const surfaceMaterial = new THREE.MeshPhysicalMaterial({
         color: 0x38bdf8,
         transmission: 0.9,
         opacity: 1,
         metalness: 0,
         roughness: 0.1,
-        ior: 1.5,
+        ior: 1.52,
         transparent: true,
-        side: THREE.DoubleSide
+        side: THREE.FrontSide
     });
-    const glassPlane = new THREE.Mesh(glassGeometry, glassMaterial);
-    glassPlane.position.y = -5; // Top face is at y=0
-    scene.add(glassPlane);
+    
+    // Top surface with high resolution for ripples
+    const surfaceGeometry = new THREE.PlaneGeometry(30, 10, 60, 20);
+    const surfaceMesh = new THREE.Mesh(surfaceGeometry, surfaceMaterial);
+    surfaceMesh.rotation.x = -Math.PI / 2;
+    surfaceMesh.position.y = 0;
+    scene.add(surfaceMesh);
+
+    // Bottom volume
+    const volumeGeometry = new THREE.BoxGeometry(30, 9.99, 10);
+    const volumeMesh = new THREE.Mesh(volumeGeometry, surfaceMaterial);
+    volumeMesh.position.y = -5.005;
+    scene.add(volumeMesh);
+    
+    // Original positions to ripple from
+    const originalPositions = surfaceGeometry.attributes.position.clone();
     
     // Grid Helper at y=0
     const gridHelper = new THREE.GridHelper(30, 30, 0x38bdf8, 0x475569);
@@ -50,12 +69,12 @@ window.onload = function () {
     scene.add(gridHelper);
 
     // Wave parameters
-    const n1 = 1.0;
-    const n2 = 1.5;
+    let n1 = 1.0;
+    let n2 = 1.5;
     const L = 10; // Length of rays
     const numPoints = 200;
-    const lambda = 2.5; // Wavelength
-    const k = (2 * Math.PI) / lambda;
+    let lambda = 2.5; // Wavelength
+    let k = (2 * Math.PI) / lambda;
     const w = 5; // Angular frequency
 
     // State Variables
@@ -119,30 +138,91 @@ window.onload = function () {
     const rTeValue = document.getElementById("rTeValue");
     const rTmValue = document.getElementById("rTmValue");
 
+    const n1Slider = document.getElementById("n1Slider");
+    const n2Slider = document.getElementById("n2Slider");
+    const lambdaSlider = document.getElementById("lambdaSlider");
+    const angleTickMarks = document.getElementById("angleTickMarks");
+
     function updatePhysics() {
         const theta_i = parseFloat(slider.value) * Math.PI / 180;
         incidentAngle = theta_i;
         angleValue.innerHTML = parseFloat(slider.value).toFixed(1) + "&deg;";
+        
+        n1 = parseFloat(n1Slider.value);
+        document.getElementById("n1Value").innerText = n1.toFixed(2);
+        
+        n2 = parseFloat(n2Slider.value);
+        document.getElementById("n2Value").innerText = n2.toFixed(2);
+        
+        lambda = parseFloat(lambdaSlider.value);
+        document.getElementById("lambdaValue").innerText = lambda.toFixed(1);
+        k = (2 * Math.PI) / lambda;
+
+        // Update Tick Marks
+        if (angleTickMarks) {
+            angleTickMarks.innerHTML = '<span>0&deg;</span>';
+            const theta_b = Math.atan(n2 / n1);
+            const theta_b_deg = theta_b * 180 / Math.PI;
+            const percentB = (theta_b_deg / 89) * 100;
+            if(percentB >= 0 && percentB <= 100) {
+                const bTick = document.createElement('span');
+                bTick.style.left = `${percentB}%`;
+                bTick.style.position = 'absolute';
+                bTick.style.transform = 'translateX(-50%)';
+                bTick.style.color = 'var(--accent)';
+                bTick.innerText = `Brewster (${theta_b_deg.toFixed(1)}\xB0)`;
+                angleTickMarks.appendChild(bTick);
+            }
+            if (n1 > n2) {
+                const theta_c = Math.asin(n2 / n1);
+                const theta_c_deg = theta_c * 180 / Math.PI;
+                const percentC = (theta_c_deg / 89) * 100;
+                if(percentC >= 0 && percentC <= 100) {
+                    const cTick = document.createElement('span');
+                    cTick.style.left = `${percentC}%`;
+                    cTick.style.position = 'absolute';
+                    cTick.style.transform = 'translateX(-50%)';
+                    cTick.style.color = '#f87171'; // TE color for alert
+                    cTick.innerText = `TIR (${theta_c_deg.toFixed(1)}\xB0)`;
+                    angleTickMarks.appendChild(cTick);
+                }
+            }
+            const endTick = document.createElement('span');
+            endTick.innerHTML = '89&deg;';
+            angleTickMarks.appendChild(endTick);
+        }
 
         // Snell's Law
         const sin_t = (n1 / n2) * Math.sin(theta_i);
-        theta_t = Math.asin(sin_t);
 
-        // Fresnel Equations
-        const cos_i = Math.cos(theta_i);
-        const cos_t = Math.cos(theta_t);
+        // Fresnel Equations & TIR
+        if (sin_t > 1) {
+            // Total Internal Reflection
+            theta_t = Math.PI / 2; // transmitted angle doesn't really matter as t=0
+            r_TE = 1; // Simplification: full amplitude reflection
+            r_TM = 1;
+            t_TE = 0;
+            t_TM = 0;
+            rTeValue.innerText = "TIR (1.0)";
+            rTmValue.innerText = "TIR (1.0)";
+            rTmValue.style.opacity = "1";
+        } else {
+            theta_t = Math.asin(sin_t);
+            const cos_i = Math.cos(theta_i);
+            const cos_t = Math.cos(theta_t);
 
-        r_TE = (n1 * cos_i - n2 * cos_t) / (n1 * cos_i + n2 * cos_t);
-        r_TM = (n2 * cos_i - n1 * cos_t) / (n2 * cos_i + n1 * cos_t);
-        t_TE = (2 * n1 * cos_i) / (n1 * cos_i + n2 * cos_t);
-        t_TM = (2 * n1 * cos_i) / (n2 * cos_i + n1 * cos_t);
+            r_TE = (n1 * cos_i - n2 * cos_t) / (n1 * cos_i + n2 * cos_t);
+            r_TM = (n2 * cos_i - n1 * cos_t) / (n2 * cos_i + n1 * cos_t);
+            t_TE = (2 * n1 * cos_i) / (n1 * cos_i + n2 * cos_t);
+            t_TM = (2 * n1 * cos_i) / (n2 * cos_i + n1 * cos_t);
 
-        rTeValue.innerText = r_TE.toFixed(3);
-        rTmValue.innerText = r_TM.toFixed(3);
+            rTeValue.innerText = r_TE.toFixed(3);
+            rTmValue.innerText = r_TM.toFixed(3);
 
-        // Highlight brewster visually if near
-        const isBrewster = Math.abs(r_TM) < 0.005;
-        rTmValue.style.opacity = isBrewster ? "0.3" : "1";
+            // Highlight brewster visually if near
+            const isBrewster = Math.abs(r_TM) < 0.005;
+            rTmValue.style.opacity = isBrewster ? "0.3" : "1";
+        }
     }
 
     function updateWaveGeometry() {
@@ -211,14 +291,114 @@ window.onload = function () {
         transTmGeo.attributes.position.needsUpdate = true;
     }
 
+    let isWater = false;
+    const materialRadios = document.querySelectorAll('input[name="material"]');
+    materialRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            if (e.target.value === 'water') {
+                isWater = true;
+                surfaceMaterial.color.setHex(0x0ea5e9); // slightly darker/deeper blue
+                surfaceMaterial.ior = 1.33;
+                n2Slider.value = 1.33;
+            } else {
+                isWater = false;
+                surfaceMaterial.color.setHex(0x38bdf8); // glass blue
+                surfaceMaterial.ior = 1.52;
+                n2Slider.value = 1.52;
+                
+                // reset vertices back to flat
+                const pos = surfaceGeometry.attributes.position;
+                const origPos = originalPositions;
+                for(let i=0; i<pos.count; i++) {
+                    pos.setZ(i, origPos.getZ(i));
+                }
+                pos.needsUpdate = true;
+                surfaceGeometry.computeVertexNormals();
+            }
+            updatePhysics();
+        });
+    });
+
     slider.addEventListener('input', updatePhysics);
+    n1Slider.addEventListener('input', updatePhysics);
+    n2Slider.addEventListener('input', updatePhysics);
+    lambdaSlider.addEventListener('input', updatePhysics);
     updatePhysics();
+
+    // Auto Rotate camera listener
+    const autoRotateToggle = document.getElementById("autoRotateToggle");
+    if (autoRotateToggle) {
+        autoRotateToggle.addEventListener("change", (e) => {
+            controls.autoRotate = e.target.checked;
+        });
+    }
+
+    // Draggable Panels
+    const panels = document.querySelectorAll('.ui-panel');
+    panels.forEach(panel => {
+        const title = panel.querySelector('.title');
+        if (!title) return;
+
+        let isDragging = false;
+        let startX, startY, initialLeft, initialTop;
+
+        title.addEventListener('pointerdown', (e) => {
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            
+            // Get actual computed position to handle transform issues
+            const rect = panel.getBoundingClientRect();
+            initialLeft = rect.left;
+            initialTop = rect.top;
+            
+            // Remove bottom/right positioning constraints and transform
+            panel.style.bottom = 'auto';
+            panel.style.right = 'auto';
+            panel.style.transform = 'none';
+            panel.style.left = initialLeft + 'px';
+            panel.style.top = initialTop + 'px';
+            
+            title.setPointerCapture(e.pointerId);
+        });
+
+        title.addEventListener('pointermove', (e) => {
+            if (!isDragging) return;
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            panel.style.left = (initialLeft + dx) + 'px';
+            panel.style.top = (initialTop + dy) + 'px';
+        });
+
+        title.addEventListener('pointerup', (e) => {
+            isDragging = false;
+            if(title.hasPointerCapture(e.pointerId)) {
+                title.releasePointerCapture(e.pointerId);
+            }
+        });
+    });
 
     const clock = new THREE.Clock();
 
     function animate() {
         requestAnimationFrame(animate);
-        time += clock.getDelta();
+        const delta = clock.getDelta();
+        time += delta;
+        
+        controls.update();
+
+        if (isWater) {
+            const pos = surfaceGeometry.attributes.position;
+            const origPos = originalPositions;
+            for(let i = 0; i < pos.count; i++) {
+                const x = origPos.getX(i);
+                const y = origPos.getY(i); // Local Y on the plane
+                const waveHeight = 0.15 * Math.sin(x * 1.5 + time * 2.5) * Math.cos(y * 1.5 + time * 1.5);
+                pos.setZ(i, origPos.getZ(i) + waveHeight);
+            }
+            pos.needsUpdate = true;
+            surfaceGeometry.computeVertexNormals();
+        }
         
         updateWaveGeometry();
         renderer.render(scene, camera);
