@@ -45,18 +45,12 @@ window.onload = function () {
         side: THREE.FrontSide
     });
     
-    // Top surface with high resolution for ripples
-    const surfaceGeometry = new THREE.PlaneGeometry(30, 10, 60, 20);
+    // Single volume with high resolution top for ripples
+    const surfaceGeometry = new THREE.BoxGeometry(30, 10, 10, 60, 1, 20);
     const surfaceMesh = new THREE.Mesh(surfaceGeometry, surfaceMaterial);
-    surfaceMesh.rotation.x = -Math.PI / 2;
-    surfaceMesh.position.y = 0;
+    // Align top face to y=0 exactly
+    surfaceMesh.position.y = -5.0;
     scene.add(surfaceMesh);
-
-    // Bottom volume
-    const volumeGeometry = new THREE.BoxGeometry(30, 9.99, 10);
-    const volumeMesh = new THREE.Mesh(volumeGeometry, surfaceMaterial);
-    volumeMesh.position.y = -5.005;
-    scene.add(volumeMesh);
     
     // Original positions to ripple from
     const originalPositions = surfaceGeometry.attributes.position.clone();
@@ -382,7 +376,7 @@ window.onload = function () {
                 const pos = surfaceGeometry.attributes.position;
                 const origPos = originalPositions;
                 for(let i=0; i<pos.count; i++) {
-                    pos.setZ(i, origPos.getZ(i));
+                    pos.setY(i, origPos.getY(i));
                 }
                 pos.needsUpdate = true;
                 surfaceGeometry.computeVertexNormals();
@@ -471,8 +465,7 @@ window.onload = function () {
 
     function animate() {
         requestAnimationFrame(animate);
-        const delta = clock.getDelta();
-        time += delta;
+        const elapsedTime = clock.getElapsedTime();
         
         controls.update();
 
@@ -480,15 +473,27 @@ window.onload = function () {
             const pos = surfaceGeometry.attributes.position;
             const origPos = originalPositions;
             for(let i = 0; i < pos.count; i++) {
-                const x = origPos.getX(i);
-                const y = origPos.getY(i); // Local Y on the plane
-                const waveHeight = 0.15 * Math.sin(x * 1.5 + time * 2.5) * Math.cos(y * 1.5 + time * 1.5);
-                pos.setZ(i, origPos.getZ(i) + waveHeight);
+                // Top vertices of BoxGeometry (local Y = 5)
+                if (origPos.getY(i) > 4.9) {
+                    const x = origPos.getX(i);
+                    const z = origPos.getZ(i);
+                    
+                    // Sum two circular ripples for organic "flowing" interference
+                    const d1 = Math.sqrt(x * x + z * z);
+                    const d2 = Math.sqrt((x - 10) * (x - 10) + (z - 5) * (z - 5));
+                    
+                    const w1 = 0.12 * Math.sin(d1 * 1.2 - elapsedTime * 2.5);
+                    const w2 = 0.06 * Math.sin(d2 * 2.0 - elapsedTime * 3.5);
+                    
+                    pos.setY(i, origPos.getY(i) + w1 + w2);
+                }
             }
             pos.needsUpdate = true;
             surfaceGeometry.computeVertexNormals();
         }
         
+        // Use consistent time for wave physics
+        time = elapsedTime;
         updateWaveGeometry();
         renderer.render(scene, camera);
     }
